@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Solver with Progress Tracking</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f9ff;
+        }
+        .calculator {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            background: #d6eaf8;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button.secondary {
+            background: #95a5a6;
+        }
+        button.secondary:hover {
+            background: #7f8c8d;
+        }
+        .steps {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-radius: 5px;
+        }
+        .step {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-left: 4px solid #3498db;
+            border-radius: 0 5px 5px 0;
+        }
+        .step.highlight {
+            background: #fffde7;
+            border-left: 4px solid #ffc107;
+        }
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fdecea;
+            border-radius: 5px;
+        }
+        .success {
+            color: #27ae60;
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 5px;
+        }
+        .visualization {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            text-align: center;
+        }
+        canvas {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .progress-container {
+            margin-top: 20px;
+            background: #ecf0f1;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .progress-bar {
+            height: 20px;
+            background: #3498db;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .progress-text {
+            margin-top: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .hint {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            color: #1565c0;
+        }
+        .hint-btn {
+            background: none;
+            border: none;
+            color: #3498db;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 0;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1>Advanced Math Solver</h1>
+        <p class="subtitle">Learn math with step-by-step solutions and visualizations</p>
+        
+        <div class="progress-container">
+            <h3>Your Progress</h3>
+            <div class="progress-bar" id="progress-bar"></div>
+            <div class="progress-text" id="progress-text">0% Complete</div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="openTab('basic')">Basic Math</button>
+            <button class="tab" onclick="openTab('algebra')">Algebra</button>
+            <button class="tab" onclick="openTab('polynomial')">Polynomials</button>
+            <button class="tab" onclick="openTab('trigonometry')">Trigonometry</button>
+            <button class="tab" onclick="openTab('geometry')">Geometry</button>
+        </div>
+        
+        <!-- Basic Math Tab -->
+        <div id="basic" class="tab-content active">
+            <h2>Basic Operations</h2>
+            <div class="input-group">
+                <input type="number" id="num1" placeholder="First number">
+                <select id="basic-op">
+                    <option value="+">Addition (+)</option>
+                    <option value="-">Subtraction (-)</option>
+                    <option value="*">Multiplication (×)</option>
+                    <option value="/">Division (÷)</option>
+                </select>
+                <input type="number" id="num2" placeholder="Second number">
+                <button onclick="solveBasic()">Calculate</button>
+                <button class="secondary" onclick="showBasicHint()">Need Help?</button>
+                <div id="basic-hint" class="hint">
+                    <p>For addition, simply add the two numbers together. For subtraction, subtract the second number from the first. Multiplication is repeated addition, and division is splitting into equal parts.</p>
+                </div>
+            </div>
+            <div id="basic-steps" class="steps"></div>
+            <div id="basic-visualization" class="visualization"></div>
+        </div>
+        
+        <!-- Algebra Tab -->
+        <div id="algebra" class="tab-content">
+            <h2>Algebra</h2>
+            <div class="input-group">
+                <select id="algebra-type">
+                    <option value="linear">Linear Equation (ax + b = c)</option>
+                    <option value="quadratic">Quadratic Equation (ax² + bx + c = 0)</option>
+                </select>
+                <div id="linear-inputs">
+                    <input type="number" id="linear-a" placeholder="Coefficient (a)">
+                    <input type="number" id="linear-b" placeholder="Constant (b)">
+                    <input type="number" id="linear-c" placeholder="Right side (c)">
+                </div>
+                <div id="quadratic-inputs" style="display: none;">
+                    <input type="number" id="quad-a" placeholder="a (x²)">
+                    <input type="number" id="quad-b" placeholder="b (x)">
+                    <input type="number" id="quad-c" placeholder="c (constant)">
+                </div>
+                <button onclick="solveAlgebra()">Solve</button>
+                <button class="secondary" onclick="showAlgebraHint()">Need Help?</button>
+                <div id="algebra-hint" class="hint">
+                    <p><strong>Linear equations:</strong> Isolate x by moving terms to opposite sides.<br>
+                    <strong>Quadratic equations:</strong> Use the quadratic formula: x = [-b ± √(b²-4ac)] / 2a</p>
+                </div>
+            </div>
+            <div id="algebra-steps" class="steps"></div>
+            <div id="algebra-visualization" class="visualization">
+                <canvas id="algebra-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Polynomial Tab -->
+        <div id="polynomial" class="tab-content">
+            <h2>Polynomials</h2>
+            <div class="input-group">
+                <select id="poly-op">
+                    <option value="add">Add Polynomials</option>
+                    <option value="subtract">Subtract Polynomials</option>
+                    <option value="multiply">Multiply Polynomials</option>
+                    <option value="factor">Factor Polynomial</option>
+                </select>
+                <input type="text" id="poly1" placeholder="First polynomial (e.g., 2x^2 + 3x - 5)">
+                <input type="text" id="poly2" placeholder="Second polynomial (if applicable)">
+                <button onclick="solvePolynomial()">Solve</button>
+                <button class="secondary" onclick="showPolynomialHint()">Need Help?</button>
+                <div id="polynomial-hint" class="hint">
+                    <p><strong>Adding/Subtracting:</strong> Combine like terms.<br>
+                    <strong>Multiplying:</strong> Use the distributive property (FOIL method for binomials).<br>
+                    <strong>Factoring:</strong> Look for common factors or use patterns like difference of squares.</p>
+                </div>
+            </div>
+            <div id="polynomial-steps" class="steps"></div>
+            <div id="polynomial-visualization" class="visualization">
+                <canvas id="polynomial-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Trigonometry Tab -->
+        <div id="trigonometry" class="tab-content">
+            <h2>Trigonometry</h2>
+            <div class="input-group">
+                <select id="trig-func">
+                    <option value="sin">Sine (sin)</option>
+                    <option value="cos">Cosine (cos)</option>
+                    <option value="tan">Tangent (tan)</option>
+                    <option value="asin">Inverse Sine (sin⁻¹)</option>
+                    <option value="acos">Inverse Cosine (cos⁻¹)</option>
+                    <option value="atan">Inverse Tangent (tan⁻¹)</option>
+                </select>
+                <input type="number" id="trig-input" placeholder="Angle (degrees) or value">
+                <button onclick="solveTrigonometry()">Calculate</button>
+                <button class="secondary" onclick="showTrigonometryHint()">Need Help?</button>
+                <div id="trigonometry-hint" class="hint">
+                    <p><strong>Sine:</strong> opposite/hypotenuse<br>
+                    <strong>Cosine:</strong> adjacent/hypotenuse<br>
+                    <strong>Tangent:</strong> opposite/adjacent<br>
+                    <strong>Inverse functions</strong> return angles for given ratios.</p>
+                </div>
+            </div>
+            <div id="trig-steps" class="steps"></div>
+            <div id="trig-visualization" class="visualization">
+                <canvas id="trig-unit-circle"></canvas>
+            </div>
+        </div>
+        
+        <!-- Geometry Tab -->
+        <div id="geometry" class="tab-content">
+            <h2>Geometry</h2>
+            <div class="input-group">
+                <select id="shape">
+                    <option value="circle">Circle</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="rectangle">Rectangle</option>
+                    <option value="sphere">Sphere</option>
+                </select>
+                <div id="circle-inputs">
+                    <input type="number" id="radius" placeholder="Radius">
+                </div>
+                <div id="triangle-inputs" style="display: none;">
+                    <input type="number" id="base" placeholder="Base">
+                    <input type="number" id="height" placeholder="Height">
+                </div>
+                <div id="rectangle-inputs" style="display: none;">
+                    <input type="number" id="length" placeholder="Length">
+                    <input type="number" id="width" placeholder="Width">
+                </div>
+                <div id="sphere-inputs" style="display: none;">
+                    <input type="number" id="sphere-radius" placeholder="Radius">
+                </div>
+                <button onclick="solveGeometry()">Calculate</button>
+                <button class="secondary" onclick="showGeometryHint()">Need Help?</button>
+                <div id="geometry-hint" class="hint">
+                    <p><strong>Circle:</strong> Area = πr², Circumference = 2πr<br>
+                    <strong>Triangle:</strong> Area = ½ × base × height<br>
+                    <strong>Rectangle:</strong> Area = length × width, Perimeter = 2(length + width)<br>
+                    <strong>Sphere:</strong> Volume = (4/3)πr³, Surface Area = 4πr²</p>
+                </div>
+            </div>
+            <div id="geometry-steps" class="steps"></div>
+            <div id="geometry-visualization" class="visualization">
+                <canvas id="geometry-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize progress
+        let progress = localStorage.getItem('mathProgress') ? parseInt(localStorage.getItem('mathProgress')) : 0;
+        updateProgress();
+
+        // Tab switching
+        function openTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            
+            const tabButtons = document.querySelectorAll('.tab');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            document.getElementById('progress-bar').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = progress + '% Complete';
+            localStorage.setItem('mathProgress', progress);
+        }
+
+        // Increment progress when problems are solved
+        function incrementProgress() {
+            if (progress < 100) {
+                progress += 5;
+                if (progress > 100) progress = 100;
+                updateProgress();
+                
+                // Show celebration when reaching 100%
+                if (progress === 100) {
+                    setTimeout(() => {
+                        alert('Congratulations! You\'ve completed 100% of the math problems! 🎉');
+                    }, 500);
+                }
+            }
+        }
+
+        // Hint toggles
+        function showBasicHint() {
+            document.getElementById('basic-hint').style.display = 'block';
+        }
+        function showAlgebraHint() {
+            document.getElementById('algebra-hint').style.display = 'block';
+        }
+        function showPolynomialHint() {
+            document.getElementById('polynomial-hint').style.display = 'block';
+        }
+        function showTrigonometryHint() {
+            document.getElementById('trigonometry-hint').style.display = 'block';
+        }
+        function showGeometryHint() {
+            document.getElementById('geometry-hint').style.display = 'block';
+        }
+
+        // Dynamic input fields for Algebra
+        document.getElementById('algebra-type').addEventListener('change', function() {
+            const type = this.value;
+            document.getElementById('linear-inputs').style.display = type === 'linear' ? 'block' : 'none';
+            document.getElementById('quadratic-inputs').style.display = type === 'quadratic' ? 'block' : 'none';
+        });
+
+        // Dynamic input fields for Geometry
+        document.getElementById('shape').addEventListener('change', function() {
+            const shape = this.value;
+            document.getElementById('circle-inputs').style.display = shape === 'circle' ? 'block' : 'none';
+            document.getElementById('triangle-inputs').style.display = shape === 'triangle' ? 'block' : 'none';
+            document.getElementById('rectangle-inputs').style.display = shape === 'rectangle' ? 'block' : 'none';
+            document.getElementById('sphere-inputs').style.display = shape === 'sphere' ? 'block' : 'none';
+        });
+
+        // Basic Math Operations
+        function solveBasic() {
+            const num1 = parseFloat(document.getElementById('num1').value);
+            const num2 = parseFloat(document.getElementById('num2').value);
+            const op = document.getElementById('basic-op').value;
+            const stepsDiv = document.getElementById('basic-steps');
+            const visDiv = document.getElementById('basic-visualization');
+            stepsDiv.innerHTML = '';
+            visDiv.innerHTML = '';
+
+            if (isNaN(num1) || isNaN(num2)) {
+                stepsDiv.innerHTML = `<div class="error">Please enter valid numbers.</div>`;
+                return;
+            }
+
+            let result, steps;
+            switch(op) {
+                case '+':
+                    result = num1 + num2;
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Write the addition problem: ${num1} + ${num2}</div>
+                        <div class="step"><strong>Step 2:</strong> Add the numbers: ${num1} + ${num2} = ${result}</div>
+                        <div class="step"><strong>Result:</strong> ${result}</div>
+                    `;
+                    // Visualization
+                    visDiv.innerHTML = `
+                        <h3>Visualization</h3>
+                        <p>${num1} + ${num2} = ${result}</p>
+                        <div style="display: flex; justify-content: center; gap: 10px;">
+                            ${'<div style="width:30px;height:30px;background:#3498db;border-radius:50%;"></div>'.repeat(num1)}
+                            + 
+                            ${'<div style="width:30px;height:30px;background:#e74c3c;border-radius:50%;"></div>'.repeat(num2)}
+                            =
+                            ${'<div style="width:30px;height:30px;background:#2ecc71;border-radius:50%;"></div>'.repeat(result)}
+                        </div>
+                    `;
+                    break;
+                case '-':
+                    result = num1 - num2;
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Write the subtraction problem: ${num1} - ${num2}</div>
+                        <div class="step"><strong>Step 2:</strong> Subtract the numbers: ${num1} - ${num2} = ${result}</div>
+                        <div class="step"><strong>Result:</strong> ${result}</div>
+                    `;
+                    // Visualization
+                    visDiv.innerHTML = `
+                        <h3>Visualization</h3>
+                        <p>Start with ${num1} items, remove ${num2} items:</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
+                            ${'<div style="width:30px;height:30px;background:#3498db;border-radius:50%;"></div>'.repeat(num1)}
+                        </div>
+                        <p>Remove ${num2} items:</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                            ${'<div style="width:30px;height:30px;background:#e74c3c;border-radius:50%;"></div>'.repeat(num2)}
+                        </div>
+                        <p>Remaining: ${result} items</p>
+                    `;
+                    break;
+                case '*':
+                    result = num1 * num2;
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Write the multiplication problem: ${num1} × ${num2}</div>
+                        <div class="step"><strong>Step 2:</strong> Multiply the numbers: ${num1} × ${num2} = ${result}</div>
+                        <div class="step"><strong>Result:</strong> ${result}</div>
+                    `;
+                    // Visualization as array
+                    if (num1 <= 10 && num2 <= 10) {
+                        let visHTML = '<h3>Visualization</h3><p>Multiplication as repeated addition:</p><div style="display: grid; grid-template-columns: repeat(' + num2 + ', 30px); gap: 5px;">';
+                        for (let i = 0; i < num1; i++) {
+                            for (let j = 0; j < num2; j++) {
+                                visHTML += '<div style="width:30px;height:30px;background:#' + 
+                                    Math.floor(Math.random()*16777215).toString(16) + ';"></div>';
+                            }
+                        }
+                        visHTML += '</div><p>Total: ' + num1 + ' × ' + num2 + ' = ' + result + ' items</p>';
+                        visDiv.innerHTML = visHTML;
+                    }
+                    break;
+                case '/':
+                    if (num2 === 0) {
+                        stepsDiv.innerHTML = `<div class="error">Cannot divide by zero.</div>`;
+                        return;
+                    }
+                    result = num1 / num2;
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Write the division problem: ${num1} ÷ ${num2}</div>
+                        <div class="step"><strong>Step 2:</strong> Divide the numbers: ${num1} ÷ ${num2} = ${result}</div>
+                        <div class="step"><strong>Result:</strong> ${result}</div>
+                    `;
+                    // Visualization
+                    if (num1 <= 100 && num2 <= 10) {
+                        let visHTML = '<h3>Visualization</h3><p>Dividing ' + num1 + ' into ' + num2 + ' equal groups:</p>';
+                        const perGroup = Math.floor(num1 / num2);
+                        const remainder = num1 % num2;
+                        
+                        for (let i = 0; i < num2; i++) {
+                            const count = i < remainder ? perGroup + 1 : perGroup;
+                            visHTML += `<div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                                <span>Group ${i+1}:</span>
+                                ${'<div style="width:20px;height:20px;background:#3498db;border-radius:50%;"></div>'.repeat(count)}
+                            </div>`;
+                        }
+                        
+                        if (remainder > 0) {
+                            visHTML += `<p>Each group gets ${perGroup} with ${remainder} left over (remainder)</p>`;
+                        } else {
+                            visHTML += `<p>Each group gets exactly ${perGroup} items</p>`;
+                        }
+                        
+                        visDiv.innerHTML = visHTML;
+                    }
+                    break;
+            }
+            stepsDiv.innerHTML = steps;
+            incrementProgress();
+        }
+
+        // Algebra Solver
+        function solveAlgebra() {
+            const type = document.getElementById('algebra-type').value;
+            const stepsDiv = document.getElementById('algebra-steps');
+            stepsDiv.innerHTML = '';
+
+            if (type === 'linear') {
+                const a = parseFloat(document.getElementById('linear-a').value);
+                const b = parseFloat(document.getElementById('linear-b').value);
+                const c = parseFloat(document.getElementById('linear-c').value);
+
+                if (isNaN(a) || isNaN(b) || isNaN(c)) {
+                    stepsDiv.innerHTML = `<div class="error">Please enter valid coefficients.</div>`;
+                    return;
+                }
+
+                if (a === 0) {
+                    stepsDiv.innerHTML = `<div class="error">Coefficient 'a' cannot be zero in a linear equation.</div>`;
+                    return;
+                }
+
+                const x = (c - b) / a;
+                stepsDiv.innerHTML = `
+                    <div class="step highlight"><strong>Step 1:</strong> Start with the equation: ${a}x + ${b} = ${c}</div>
+                    <div class="step"><strong>Step 2:</strong> Subtract ${b} from both sides: ${a}x = ${c - b}</div>
+                    <div class="step"><strong>Step 3:</strong> Divide both sides by ${a}: x = ${x}</div>
+                    <div class="step"><strong>Solution:</strong> x = ${x}</div>
+                `;
+
+                // Visualization for linear equation
+                const ctx = document.getElementById('algebra-chart').getContext('2d');
+                if (window.algebraChart) {
+                    window.algebraChart.destroy();
+                }
+                window.algebraChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: 21}, (_, i) => i - 10),
+                        datasets: [{
+                            label: `y = ${a}x + ${b}`,
+                            data: Array.from({length: 21}, (_, i) => a*(i-10) + b),
+                            borderColor: '#3498db',
+                            borderWidth: 2,
+                            fill: false
+                        }, {
+                            label: `y = ${c}`,
+                            data: Array(21).fill(c),
+                            borderColor: '#e74c3c',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `Solution at x = ${x} (where the lines intersect)`
+                            }
+                        }
+                    }
+                });
+            } else {
+                const a = parseFloat(document.getElementById('quad-a').value);
+                const b = parseFloat(document.getElementById('quad-b').value);
+                const c = parseFloat(document.getElementById('quad-c').value);
+
+                if (isNaN(a) || isNaN(b) || isNaN(c)) {
+                    stepsDiv.innerHTML = `<div class="error">Please enter valid coefficients.</div>`;
+                    return;
+                }
+
+                if (a === 0) {
+                    stepsDiv.innerHTML = `<div class="error">This is not a quadratic equation (a = 0).</div>`;
+                    return;
+                }
+
+                const discriminant = b * b - 4 * a * c;
+                stepsDiv.innerHTML = `
+                    <div class="step highlight"><strong>Step 1:</strong> Quadratic equation: ${a}x² + ${b}x + ${c} = 0</div>
+                    <div class="step"><strong>Step 2:</strong> Calculate discriminant (D = b² - 4ac): D = ${discriminant}</div>
+                `;
+
+                if (discriminant < 0) {
+                    stepsDiv.innerHTML += `
+                        <div class="step"><strong>Step 3:</strong> Discriminant is negative. No real solutions.</div>
+                    `;
+                } else if (discriminant === 0) {
+                    const x = -b / (2 * a);
+                    stepsDiv.innerHTML += `
+                        <div class="step"><strong>Step 3:</strong> Discriminant is zero. One real solution.</div>
+                        <div class="step"><strong>Step 4:</strong> x = -b/(2a) = ${x}</div>
+                        <div class="step"><strong>Solution:</strong> x = ${x}</div>
+                    `;
+                } else {
+                    const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                    const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                    stepsDiv.innerHTML += `
+                        <div class="step"><strong>Step 3:</strong> Discriminant is positive. Two real solutions.</div>
+                        <div class="step"><strong>Step 4:</strong> x = [-b ± √D] / (2a)</div>
+                        <div class="step"><strong>Step 5:</strong> x₁ = ${x1.toFixed(4)}</div>
+                        <div class="step"><strong>Step 6:</strong> x₂ = ${x2.toFixed(4)}</div>
+                        <div class="step"><strong>Solutions:</strong> x₁ = ${x1.toFixed(4)}, x₂ = ${x2.toFixed(4)}</div>
+                    `;
+                }
+
+                // Visualization for quadratic equation
+                const ctx = document.getElementById('algebra-chart').getContext('2d');
+                if (window.algebraChart) {
+                    window.algebraChart.destroy();
+                }
+                
+                // Generate x values
+                const xValues = [];
+                const yValues = [];
+                for (let x = -10; x <= 10; x += 0.5) {
+                    xValues.push(x);
+                    yValues.push(a*x*x + b*x + c);
+                }
+                
+                window.algebraChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: xValues,
+                        datasets: [{
+                            label: `y = ${a}x² + ${b}x + ${c}`,
+                            data: yValues,
+                            borderColor: '#3498db',
+                            borderWidth: 2,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: false
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Quadratic Function Graph'
+                            }
+                        }
+                    }
+                });
+            }
+            incrementProgress();
+        }
+
+        // Polynomial Operations
+        function solvePolynomial() {
+            const op = document.getElementById('poly-op').value;
+            const poly1 = document.getElementById('poly1').value.trim();
+            const poly2 = document.getElementById('poly2').value.trim();
+            const stepsDiv = document.getElementById('polynomial-steps');
+            stepsDiv.innerHTML = '';
+
+            if (!poly1) {
+                stepsDiv.innerHTML = `<div class="error">Please enter a polynomial.</div>`;
+                return;
+            }
+
+            if ((op === 'add' || op === 'subtract' || op === 'multiply') && !poly2) {
+                stepsDiv.innerHTML = `<div class="error">Please enter a second polynomial.</div>`;
+                return;
+            }
+
+            try {
+                // Using math.js for polynomial operations
+                const p1 = math.parse(poly1).compile();
+                const p2 = poly2 ? math.parse(poly2).compile() : null;
+                let result, steps;
+
+                switch(op) {
+                    case 'add':
+                        result = math.add(p1.evaluate(), p2.evaluate());
+                        steps = `
+                            <div class="step highlight"><strong>Step 1:</strong> Polynomial 1: ${poly1}</div>
+                            <div class="step"><strong>Step 2:</strong> Polynomial 2: ${poly2}</div>
+                            <div class="step"><strong>Step 3:</strong> Add like terms (terms with the same power of x)</div>
+                            <div class="step"><strong>Result:</strong> ${result.toString()}</div>
+                        `;
+                        break;
+                    case 'subtract':
+                        result = math.subtract(p1.evaluate(), p2.evaluate());
+                        steps = `
+                            <div class="step highlight"><strong>Step 1:</strong> Polynomial 1: ${poly1}</div>
+                            <div class="step"><strong>Step 2:</strong> Polynomial 2: ${poly2}</div>
+                            <div class="step"><strong>Step 3:</strong> Subtract like terms (terms with the same power of x)</div>
+                            <div class="step"><strong>Result:</strong> ${result.toString()}</div>
+                        `;
+                        break;
+                    case 'multiply':
+                        result = math.multiply(p1.evaluate(), p2.evaluate());
+                        steps = `
+                            <div class="step highlight"><strong>Step 1:</strong> Polynomial 1: ${poly1}</div>
+                            <div class="step"><strong>Step 2:</strong> Polynomial 2: ${poly2}</div>
+                            <div class="step"><strong>Step 3:</strong> Multiply each term in the first polynomial by each term in the second (FOIL method for binomials)</div>
+                            <div class="step"><strong>Result:</strong> ${result.toString()}</div>
+                        `;
+                        break;
+                    case 'factor':
+                        // This is a simplified version - full factoring would require more complex logic
+                        steps = `
+                            <div class="step highlight"><strong>Step 1:</strong> Polynomial: ${poly1}</div>
+                            <div class="step"><strong>Step 2:</strong> Look for common factors in all terms</div>
+                            <div class="step"><strong>Step 3:</strong> Check for special patterns (difference of squares, perfect square trinomials)</div>
+                            <div class="step"><strong>Step 4:</strong> Try factoring by grouping if applicable</div>
+                            <div class="step"><strong>Note:</strong> Full factoring requires more advanced algorithms</div>
+                        `;
+                        break;
+                }
+
+                stepsDiv.innerHTML = steps;
+
+                // Polynomial visualization
+                const ctx = document.getElementById('polynomial-chart').getContext('2d');
+                if (window.polyChart) {
+                    window.polyChart.destroy();
+                }
+
+                // Generate data points
+                const xValues = [];
+                const yValues = [];
+                for (let x = -10; x <= 10; x += 0.5) {
+                    xValues.push(x);
+                    try {
+                        const scope = {x: x};
+                        yValues.push(p1.evaluate(scope));
+                    } catch {
+                        yValues.push(null);
+                    }
+                }
+
+                window.polyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: xValues,
+                        datasets: [{
+                            label: poly1,
+                            data: yValues,
+                            borderColor: '#3498db',
+                            borderWidth: 2,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: false
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Polynomial Graph'
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                stepsDiv.innerHTML = `<div class="error">Error processing polynomial: ${error.message}</div>`;
+            }
+            incrementProgress();
+        }
+
+        // Trigonometry Solver
+        function solveTrigonometry() {
+            const func = document.getElementById('trig-func').value;
+            const input = parseFloat(document.getElementById('trig-input').value);
+            const stepsDiv = document.getElementById('trig-steps');
+            stepsDiv.innerHTML = '';
+
+            if (isNaN(input)) {
+                stepsDiv.innerHTML = `<div class="error">Please enter a valid number.</div>`;
+                return;
+            }
+
+            let result, steps;
+            const rad = input * Math.PI / 180; // Convert degrees to radians
+
+            switch(func) {
+                case 'sin':
+                    result = Math.sin(rad);
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Convert ${input}° to radians: ${input} × π/180 ≈ ${rad.toFixed(4)}</div>
+                        <div class="step"><strong>Step 2:</strong> Compute sin(${rad.toFixed(4)}) ≈ ${result.toFixed(4)}</div>
+                        <div class="step"><strong>Result:</strong> sin(${input}°) ≈ ${result.toFixed(4)}</div>
+                    `;
+                    break;
+                case 'cos':
+                    result = Math.cos(rad);
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Convert ${input}° to radians: ${input} × π/180 ≈ ${rad.toFixed(4)}</div>
+                        <div class="step"><strong>Step 2:</strong> Compute cos(${rad.toFixed(4)}) ≈ ${result.toFixed(4)}</div>
+                        <div class="step"><strong>Result:</strong> cos(${input}°) ≈ ${result.toFixed(4)}</div>
+                    `;
+                    break;
+                case 'tan':
+                    result = Math.tan(rad);
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Convert ${input}° to radians: ${input} × π/180 ≈ ${rad.toFixed(4)}</div>
+                        <div class="step"><strong>Step 2:</strong> Compute tan(${rad.toFixed(4)}) ≈ ${result.toFixed(4)}</div>
+                        <div class="step"><strong>Result:</strong> tan(${input}°) ≈ ${result.toFixed(4)}</div>
+                    `;
+                    break;
+                case 'asin':
+                    if (input < -1 || input > 1) {
+                        stepsDiv.innerHTML = `<div class="error">Input must be between -1 and 1 for inverse sine.</div>`;
+                        return;
+                    }
+                    result = Math.asin(input) * 180 / Math.PI;
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Compute sin⁻¹(${input}) in radians ≈ ${Math.asin(input).toFixed(4)}</div>
+                        <div class="step"><strong>Step 2:</strong> Convert to degrees: ${Math.asin(input).toFixed(4)} × 180/π ≈ ${result.toFixed(4)}°</div>
+                        <div class="step"><strong>Result:</strong> sin⁻¹(${input}) ≈ ${result.toFixed(4)}°</div>
+                    `;
+                    break;
+                case 'acos':
+                    if (input < -1 || input > 1) {
+                        stepsDiv.innerHTML = `<div class="error">Input must be between -1 and 1 for inverse cosine.</div>`;
+                        return;
+                    }
+                    result = Math.acos(input) * 180 / Math.PI;
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Compute cos⁻¹(${input}) in radians ≈ ${Math.acos(input).toFixed(4)}</div>
+                        <div class="step"><strong>Step 2:</strong> Convert to degrees: ${Math.acos(input).toFixed(4)} × 180/π ≈ ${result.toFixed(4)}°</div>
+                        <div class="step"><strong>Result:</strong> cos⁻¹(${input}) ≈ ${result.toFixed(4)}°</div>
+                    `;
+                    break;
+                case 'atan':
+                    result = Math.atan(input) * 180 / Math.PI;
+                    steps = `
+                        <div class="step highlight"><strong>Step 1:</strong> Compute tan⁻¹(${input}) in radians ≈ ${Math.atan(input).toFixed(4)}</div>
+                        <div class="step"><strong>Step 2:</strong> Convert to degrees: ${Math.atan(input).toFixed(4)} × 180/π ≈ ${result.toFixed(4)}°</div>
+                        <div class="step"><strong>Result:</strong> tan⁻¹(${input}) ≈ ${result.toFixed(4)}°</div>
+                    `;
+                    break;
+            }
+            stepsDiv.innerHTML = steps;
+
+            // Unit circle visualization
+            const ctx = document.getElementById('trig-unit-circle').getContext('2d');
+            if (window.unitCircle) {
+                window.unitCircle.destroy();
+            }
+
+            // Draw unit circle
+            const radius = 100;
+            const center = { x: 150, y: 150 };
+            
+            window.unitCircle = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Unit Circle',
+                        data: [{x: 0, y: 0}],
+                        pointRadius: 0,
+                        showLine: true,
+                        borderColor: '#3498db',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            min: -1.5,
+                            max: 1.5,
+                            display: false
+                        },
+                        y: {
+                            min: -1.5,
+                            max: 1.5,
+                            display: false
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    },
+                    animation: {
+                        onComplete: function() {
+                            const chart = this;
+                            const ctx = chart.ctx;
+                            
+                            // Draw circle
+                            ctx.beginPath();
+                            ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+                            ctx.strokeStyle = '#3498db';
+                            ctx.stroke();
+                            
+                            // Draw axes
+                            ctx.beginPath();
+                            ctx.moveTo(center.x - radius - 20, center.y);
+                            ctx.lineTo(center.x + radius + 20, center.y);
+                            ctx.moveTo(center.x, center.y - radius - 20);
+                            ctx.lineTo(center.x, center.y + radius + 20);
+                            ctx.strokeStyle = '#95a5a6';
+                            ctx.stroke();
+                            
+                            // Draw angle if applicable
+                            if (func === 'sin' || func === 'cos' || func === 'tan') {
+                                const angleRad = input * Math.PI / 180;
+                                const endX = center.x + radius * Math.cos(angleRad);
+                                const endY = center.y - radius * Math.sin(angleRad);
+                                
+                                // Draw radius line
+                                ctx.beginPath();
+                                ctx.moveTo(center.x, center.y);
+                                ctx.lineTo(endX, endY);
+                                ctx.strokeStyle = '#e74c3c';
+                                ctx.stroke();
+                                
+                                // Draw angle arc
+                                ctx.beginPath();
+                                ctx.arc(center.x, center.y, 30, 0, -angleRad, true);
+                                ctx.strokeStyle = '#2ecc71';
+                                ctx.stroke();
+                                
+                                // Label angle
+                                ctx.fillStyle = '#2ecc71';
+                                ctx.fillText(`${input}°`, center.x + 40, center.y - 40);
+                                
+                                // Draw right triangle if sin/cos
+                                if (func === 'sin' || func === 'cos') {
+                                    ctx.beginPath();
+                                    ctx.moveTo(endX, endY);
+                                    ctx.lineTo(endX, center.y);
+                                    ctx.lineTo(center.x, center.y);
+                                    ctx.strokeStyle = '#9b59b6';
+                                    ctx.stroke();
+                                    
+                                    // Label sides
+                                    ctx.fillStyle = '#3498db';
+                                    ctx.fillText('1 (hyp)', center.x + radius/2 + 10, center.y - radius/2 + 10);
+                                    
+                                    if (func === 'sin') {
+                                        ctx.fillStyle = '#e74c3c';
+                                        ctx.fillText(`opp = sin(${input}°) ≈ ${result.toFixed(2)}`, endX + 5, center.y - (endY - center.y)/2);
+                                    } else {
+                                        ctx.fillStyle = '#2ecc71';
+                                        ctx.fillText(`adj = cos(${input}°) ≈ ${result.toFixed(2)}`, center.x + (endX - center.x)/2, center.y + 15);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            incrementProgress();
+        }
+
+        // Geometry Solver
+        function solveGeometry() {
+            const shape = document.getElementById('shape').value;
+            const stepsDiv = document.getElementById('geometry-steps');
+            const visDiv = document.getElementById('geometry-visualization');
+            stepsDiv.innerHTML = '';
+            visDiv.innerHTML = '<canvas id="geometry-canvas"></canvas>';
+
+            if (shape === 'circle') {
+                const radius = parseFloat(document.getElementById('radius').value);
+                if (isNaN(radius) || radius <= 0) {
+                    stepsDiv.innerHTML = `<div class="error">Please enter a valid positive radius.</div>`;
+                    return;
+                }
+                const area = Math.PI * radius * radius;
+                const circumference = 2 * Math.PI * radius;
+                stepsDiv.innerHTML = `
+                    <div class="step highlight"><strong>Step 1:</strong> Area of circle = π × r²</div>
+                    <div class="step"><strong>Step 2:</strong> Area = π × ${radius}² ≈ ${area.toFixed(4)}</div>
+                    <div class="step"><strong>Step 3:</strong> Circumference = 2 × π × r</div>
+                    <div class="step"><strong>Step 4:</strong> Circumference = 2 × π × ${radius} ≈ ${circumference.toFixed(4)}</div>
+                    <div class="step"><strong>Results:</strong> Area ≈ ${area.toFixed(4)}, Circumference ≈ ${circumference.toFixed(4)}</div>
+                `;
+
+                // Draw circle
+                const canvas = document.getElementById('geometry-canvas');
+                canvas.width = 300;
+                canvas.height = 300;
+                const ctx = canvas.getContext('2d');
+                
+                // Draw circle
+                ctx.beginPath();
+                ctx.arc(150, 150, radius * 10, 0, 2 * Math.PI);
+                ctx.strokeStyle = '#3498db';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw radius
+                ctx.beginPath();
+                ctx.moveTo(150, 150);
+                ctx.lineTo(150 + radius * 10, 150);
+                ctx.strokeStyle = '#e74c3c';
+                ctx.stroke();
+                
+                // Label radius
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillText(`r = ${radius}`, 150 + radius * 5, 160);
+
+            } else if (shape === 'triangle') {
+                const base = parseFloat(document.getElementById('base').value);
+                const height = parseFloat(document.getElementById('height').value);
+                if (isNaN(base) || isNaN(height) || base <= 0 || height <= 0) {
+                    stepsDiv.innerHTML = `<div class="error">Please enter valid base and height.</div>`;
+                    return;
+                }
+                const area = 0.5 * base * height;
+                stepsDiv.innerHTML = `
+                    <div class="step highlight"><strong>Step 1:</strong> Area of triangle = ½ × base × height</div>
+                    <div class="step"><strong>Step 2:</strong> Area = ½ × ${base} × ${height} = ${area}</div>
+                    <div class="step"><strong>Result:</strong> Area = ${area}</div>
+                `;
+
+                // Draw triangle
+                const canvas = document.getElementById('geometry-canvas');
+                canvas.width = 300;
+                canvas.height = 300;
+                const ctx = canvas.getContext('2d');
+                
+                // Draw triangle
+                ctx.beginPath();
+                ctx.moveTo(50, 250);
+                ctx.lineTo(50 + base * 10, 250);
+                ctx.lineTo(50 + base * 10, 250 - height * 10);
+                ctx.closePath();
+                ctx.strokeStyle = '#3498db';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Label base and height
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillText(`base = ${base}`, 50 + base * 5, 270);
+                ctx.fillText(`height = ${height}`, 60 + base * 10, 250 - height * 5);
+
+            } else if (shape === 'rectangle') {
+                const length = parseFloat(document.getElementById('length').value);
+                const width = parseFloat(document.getElementById('width').value);
+                if (isNaN(length) || isNaN(width) || length <= 0 || width <= 0) {
+                    stepsDiv.innerHTML = `<div class="error">Please enter valid length and width.</div>`;
+                    return;
+                }
+                const area = length * width;
+                const perimeter = 2 * (length + width);
+                stepsDiv.innerHTML = `
+                    <div class="step highlight"><strong>Step 1:</strong> Area of rectangle = length × width</div>
+                    <div class="step"><strong>Step 2:</strong> Area = ${length} × ${width} = ${area}</div>
+                    <div class="step"><strong>Step 3:</strong> Perimeter = 2 × (length + width)</div>
+                    <div class="step"><strong>Step 4:</strong> Perimeter = 2 × (${length} + ${width}) = ${perimeter}</div>
+                    <div class="step"><strong>Results:</strong> Area = ${area}, Perimeter = ${perimeter}</div>
+                `;
+
+                // Draw rectangle
+                const canvas = document.getElementById('geometry-canvas');
+                canvas.width = 300;
+                canvas.height = 300;
+                const ctx = canvas.getContext('2d');
+                
+                // Draw rectangle
+                ctx.beginPath();
+                ctx.rect(50, 50, length * 10, width * 10);
+                ctx.strokeStyle = '#3498db';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Label dimensions
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillText(`length = ${length}`, 50 + length * 5, 40);
+                ctx.fillText(`width = ${width}`, 60 + length * 10, 50 + width * 5);
+
+            } else if (shape === 'sphere') {
+                const radius = parseFloat(document.getElementById('sphere-radius').value);
+                if (isNaN(radius) || radius <= 0) {
+                    stepsDiv.innerHTML = `<div class="error">Please enter a valid positive radius.</div>`;
+                    return;
+                }
+                const volume = (4/3) * Math.PI * Math.pow(radius, 3);
+                const surfaceArea = 4 * Math.PI * Math.pow(radius, 2);
+                stepsDiv.innerHTML = `
+                    <div class="step highlight"><strong>Step 1:</strong> Volume of sphere = (4/3) × π × r³</div>
+                    <div class="step"><strong>Step 2:</strong> Volume = (4/3) × π × ${radius}³ ≈ ${volume.toFixed(4)}</div>
+                    <div class="step"><strong>Step 3:</strong> Surface area = 4 × π × r²</div>
+                    <div class="step"><strong>Step 4:</strong> Surface area = 4 × π × ${radius}² ≈ ${surfaceArea.toFixed(4)}</div>
+                    <div class="step"><strong>Results:</strong> Volume ≈ ${volume.toFixed(4)}, Surface Area ≈ ${surfaceArea.toFixed(4)}</div>
+                `;
+
+                // Draw sphere (simplified 2D representation)
+                const canvas = document.getElementById('geometry-canvas');
+                canvas.width = 300;
+                canvas.height = 300;
+                const ctx = canvas.getContext('2d');
+                
+                // Draw circle with gradient for 3D effect
+                const gradient = ctx.createRadialGradient(150, 150, 0, 150, 150, radius * 10);
+                gradient.addColorStop(0, '#3498db');
+                gradient.addColorStop(1, '#2980b9');
+                
+                ctx.beginPath();
+                ctx.arc(150, 150, radius * 10, 0, 2 * Math.PI);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                ctx.strokeStyle = '#2c3e50';
+                ctx.stroke();
+                
+                // Label radius
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillText(`r = ${radius}`, 150 + radius * 5, 150);
+            }
+            incrementProgress();
+        }
+    </script>
+</body>
+</html>
